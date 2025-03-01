@@ -50,18 +50,30 @@
             try {
                 console.log('Iniciando requisição para:', `${this.backendUrl}${path}`);
                 
+                // Primeiro, fazer uma requisição OPTIONS para verificar CORS
+                const preflightResponse = await fetch(`${this.backendUrl}${path}`, {
+                    method: 'OPTIONS',
+                    mode: 'cors',
+                    credentials: 'include',
+                    headers: {
+                        'Origin': `https://${this.dominio}`,
+                        'Access-Control-Request-Method': 'GET',
+                        'Access-Control-Request-Headers': 'X-Forwarded-Host'
+                    }
+                });
+
+                if (!preflightResponse.ok) {
+                    throw new Error('Preflight request failed');
+                }
+
+                // Se o preflight foi bem sucedido, fazer a requisição real
                 const response = await fetch(`${this.backendUrl}${path}`, {
                     method: 'GET',
                     mode: 'cors',
                     credentials: 'include',
                     headers: {
                         'X-Forwarded-Host': this.dominio,
-                        'Origin': `https://${this.dominio}`,
-                        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-                        'Accept-Language': 'pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7',
-                        'X-Requested-With': 'XMLHttpRequest',
-                        'Cache-Control': 'no-cache',
-                        'Pragma': 'no-cache'
+                        'Accept': 'application/json'
                     }
                 });
 
@@ -86,6 +98,7 @@
                 
             } catch(error) {
                 console.error('Erro detalhado:', error);
+                console.error('Stack:', error);
                 this.showError(error);
             }
         }
