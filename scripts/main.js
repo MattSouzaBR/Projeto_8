@@ -24,7 +24,7 @@
                         'Host': this.dominio,
                         'Origin': `https://${this.dominio}`,
                         'Referer': `https://${this.dominio}${path}`,
-                        'Accept': 'application/json, text/html, */*',
+                        'Accept': 'text/html',
                         'Accept-Language': 'pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7'
                     }
                 });
@@ -35,29 +35,27 @@
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
 
-                let data;
-                const contentType = response.headers.get('content-type');
-                if (contentType && contentType.includes('application/json')) {
-                    data = await response.json();
-                } else {
-                    const text = await response.text();
-                    console.error('Resposta não-JSON recebida:', text);
-                    throw new Error('Resposta não-JSON recebida do servidor');
-                }
-                
-                if (data.redirect) {
-                    window.location.href = data.redirect;
-                    return;
-                }
+                const html = await response.text();
+                console.log('HTML recebido:', html.substring(0, 200) + '...'); // Log dos primeiros 200 caracteres
 
-                if (data.conteudo && data.meta) {
-                    this.updateMetaTags(data.meta);
-                    document.querySelector('main').innerHTML = data.conteudo;
-                    this.setupNavigation();
-                } else {
-                    console.error('Dados inválidos recebidos:', data);
-                    throw new Error('Formato de dados inválido');
-                }
+                // Criar um DOM temporário para extrair o conteúdo
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
+
+                // Extrair meta tags
+                const meta = {
+                    title: doc.title,
+                    description: doc.querySelector('meta[name="description"]')?.getAttribute('content') || '',
+                    keywords: doc.querySelector('meta[name="keywords"]')?.getAttribute('content') || ''
+                };
+
+                // Extrair o conteúdo principal (assumindo que está dentro de uma tag main)
+                const mainContent = doc.querySelector('main')?.innerHTML || html;
+
+                // Atualizar a página
+                this.updateMetaTags(meta);
+                document.querySelector('main').innerHTML = mainContent;
+                this.setupNavigation();
                 
             } catch(error) {
                 console.error('Erro detalhado:', error);
@@ -67,23 +65,27 @@
         }
 
         updateMetaTags(meta) {
-            document.title = meta.title;
+            document.title = meta.title || document.title;
             
             let descriptionMeta = document.querySelector('meta[name="description"]');
-            if (!descriptionMeta) {
+            if (!descriptionMeta && meta.description) {
                 descriptionMeta = document.createElement('meta');
                 descriptionMeta.setAttribute('name', 'description');
                 document.head.appendChild(descriptionMeta);
             }
-            descriptionMeta.setAttribute('content', meta.description);
+            if (descriptionMeta && meta.description) {
+                descriptionMeta.setAttribute('content', meta.description);
+            }
             
             let keywordsMeta = document.querySelector('meta[name="keywords"]');
-            if (!keywordsMeta) {
+            if (!keywordsMeta && meta.keywords) {
                 keywordsMeta = document.createElement('meta');
                 keywordsMeta.setAttribute('name', 'keywords');
                 document.head.appendChild(keywordsMeta);
             }
-            keywordsMeta.setAttribute('content', meta.keywords);
+            if (keywordsMeta && meta.keywords) {
+                keywordsMeta.setAttribute('content', meta.keywords);
+            }
         }
 
         setupNavigation() {
