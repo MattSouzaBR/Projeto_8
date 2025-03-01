@@ -9,14 +9,15 @@
 
         async init(path = '/') {
             try {
-                console.log('Fazendo requisição para:', `${this.backendUrl}${path}`);
-                console.log('Com X-Forwarded-Host:', this.dominio);
-                
                 const response = await fetch(`${this.backendUrl}${path}`, {
-                    mode: 'cors', // Explicita o modo CORS
+                    method: 'GET',
+                    mode: 'cors',
+                    credentials: 'include', // Para permitir cookies
                     headers: {
                         'X-Forwarded-Host': this.dominio,
-                        'Origin': 'https://paradisehomecare.com.br'
+                        'Origin': 'https://paradisehomecare.com.br',
+                        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+                        'Accept-Language': 'pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7'
                     }
                 });
 
@@ -24,31 +25,11 @@
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
 
-                let html = await response.text();
-                
-                // Converte URLs relativas em absolutas
-                html = html.replace(
-                    /(href|src)="\/([^"]*)"/g, 
-                    `$1="${this.backendUrl}/$2"`
-                );
-                
-                // Converte URLs relativas em CSS (background-image, etc)
-                html = html.replace(
-                    /url\(['"]?\/([^'")]+)['"]?\)/g, 
-                    `url('${this.backendUrl}/$1')`
-                );
-
+                const html = await response.text();
                 document.documentElement.innerHTML = html;
-                this.setupNavigation();
-                
-                // Ajusta as tags base para garantir que todos os recursos sejam carregados corretamente
-                const baseTag = document.createElement('base');
-                baseTag.href = this.backendUrl;
-                document.head.prepend(baseTag);
-            }
-            catch(error) {
+            } catch(error) {
                 console.error('Erro detalhado:', error);
-                document.body.innerHTML = '<h1>Erro 500 - Erro interno do servidor</h1>';
+                document.body.innerHTML = `<h1>Erro ao carregar a página</h1><p>${error.message}</p>`;
             }
         }
 
