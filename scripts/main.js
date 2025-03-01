@@ -20,7 +20,8 @@
                     mode: 'cors',
                     credentials: 'include',
                     headers: {
-                        'X-Forwarded-Host': this.dominio
+                        'X-Forwarded-Host': this.dominio,
+                        'Host': this.dominio
                     }
                 });
 
