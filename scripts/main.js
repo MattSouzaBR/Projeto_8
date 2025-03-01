@@ -60,7 +60,8 @@
                         'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
                         'Accept-Language': 'pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7',
                         'Cache-Control': 'no-cache',
-                        'Pragma': 'no-cache'
+                        'Pragma': 'no-cache',
+                        'X-Requested-Domain': 'paradisehomecare.com.br'
                     },
                     cache: 'no-cache',
                     referrerPolicy: 'strict-origin-when-cross-origin'
@@ -76,24 +77,22 @@
                 const processedHtml = this.processHtml(html);
                 document.documentElement.innerHTML = processedHtml;
                 
-                // Adicionar base tag
+                // Adicionar base tag com o domínio correto
                 this.addBaseTag();
                 
             } catch(error) {
                 console.error('Erro detalhado:', error);
                 console.error('Stack:', error.stack);
-                document.body.innerHTML = `
-                    <div style="padding: 20px; text-align: center;">
-                        <h1>Erro ao carregar a página</h1>
-                        <p>Por favor, desative bloqueadores de anúncios e recarregue a página.</p>
-                        <p>Detalhes técnicos: ${error.message}</p>
-                    </div>`;
+                this.showError(error);
             }
         }
 
         processHtml(html) {
-            // Converter URLs relativas em absolutas
-            return html.replace(/(href|src)="\/([^"]*)"/g, `$1="${this.backendUrl}/$2"`);
+            // Converter URLs relativas em absolutas e ajustar para o domínio correto
+            return html
+                .replace(/(href|src)="\/([^"]*)"/g, `$1="${this.backendUrl}/$2"`)
+                .replace(/matheusrpsouza\.com/g, 'paradisehomecare.com.br')
+                .replace(/arquivos_projeto\/matheusrpsouza\.com/g, 'arquivos_projeto/paradisehomecare.com.br');
         }
 
         addBaseTag() {
@@ -118,6 +117,25 @@
             window.onpopstate = () => {
                 this.init(window.location.pathname || '/');
             };
+        }
+
+        showError(error) {
+            document.body.innerHTML = `
+                <div style="padding: 20px; text-align: center;">
+                    <h1>Erro ao carregar a página</h1>
+                    <p>Ocorreu um erro ao carregar o conteúdo.</p>
+                    <p>Por favor, tente novamente mais tarde.</p>
+                    <p style="color: #666; font-size: 12px;">Detalhes técnicos: ${error.message}</p>
+                    <button onclick="window.location.reload()" style="
+                        margin-top: 20px;
+                        padding: 10px 20px;
+                        background-color: #2ecc71;
+                        color: white;
+                        border: none;
+                        border-radius: 4px;
+                        cursor: pointer;
+                    ">Recarregar Página</button>
+                </div>`;
         }
     }
 
