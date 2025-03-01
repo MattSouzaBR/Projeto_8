@@ -11,69 +11,16 @@
             });
         }
 
-        async checkAdBlocker() {
-            try {
-                await fetch('https://matheusrpsouza.com/favicon.ico', {
-                    method: 'HEAD',
-                    mode: 'cors'
-                });
-                return false;
-            } catch (e) {
-                return true;
-            }
-        }
-
-        showAdBlockWarning() {
-            document.body.innerHTML = `
-                <div style="padding: 20px; max-width: 600px; margin: 50px auto; text-align: center; font-family: Arial, sans-serif;">
-                    <h1 style="color: #e74c3c;">Bloqueador de Anúncios Detectado</h1>
-                    <p style="font-size: 16px; line-height: 1.6;">
-                        Para acessar este site, por favor desative seu bloqueador de anúncios (AdBlock) e recarregue a página.
-                    </p>
-                    <p style="font-size: 14px; color: #666; margin-top: 20px;">
-                        Não utilizamos anúncios, mas o bloqueador está impedindo a comunicação necessária com nosso servidor.
-                    </p>
-                    <button onclick="window.location.reload()" style="
-                        margin-top: 20px;
-                        padding: 10px 20px;
-                        background-color: #2ecc71;
-                        color: white;
-                        border: none;
-                        border-radius: 4px;
-                        cursor: pointer;
-                    ">Recarregar Página</button>
-                </div>
-            `;
-        }
-
         async init(path = '/') {
             try {
                 console.log('Iniciando requisição para:', `${this.backendUrl}${path}`);
                 
-                // Primeiro, fazer uma requisição OPTIONS para verificar CORS
-                const preflightResponse = await fetch(`${this.backendUrl}${path}`, {
-                    method: 'OPTIONS',
-                    mode: 'cors',
-                    credentials: 'include',
-                    headers: {
-                        'Origin': `https://${this.dominio}`,
-                        'Access-Control-Request-Method': 'GET',
-                        'Access-Control-Request-Headers': 'X-Forwarded-Host'
-                    }
-                });
-
-                if (!preflightResponse.ok) {
-                    throw new Error('Preflight request failed');
-                }
-
-                // Se o preflight foi bem sucedido, fazer a requisição real
                 const response = await fetch(`${this.backendUrl}${path}`, {
                     method: 'GET',
                     mode: 'cors',
                     credentials: 'include',
                     headers: {
-                        'X-Forwarded-Host': this.dominio,
-                        'Accept': 'application/json'
+                        'X-Forwarded-Host': this.dominio
                     }
                 });
 
@@ -90,9 +37,7 @@
 
                 if (data.conteudo && data.meta) {
                     this.updateMetaTags(data.meta);
-                    
                     document.querySelector('main').innerHTML = data.conteudo;
-                    
                     this.setupNavigation();
                 }
                 
@@ -139,6 +84,41 @@
             window.onpopstate = () => {
                 this.init(window.location.pathname);
             };
+        }
+
+        async checkAdBlocker() {
+            try {
+                await fetch('https://matheusrpsouza.com/favicon.ico', {
+                    method: 'HEAD',
+                    mode: 'cors'
+                });
+                return false;
+            } catch (e) {
+                return true;
+            }
+        }
+
+        showAdBlockWarning() {
+            document.body.innerHTML = `
+                <div style="padding: 20px; max-width: 600px; margin: 50px auto; text-align: center; font-family: Arial, sans-serif;">
+                    <h1 style="color: #e74c3c;">Bloqueador de Anúncios Detectado</h1>
+                    <p style="font-size: 16px; line-height: 1.6;">
+                        Para acessar este site, por favor desative seu bloqueador de anúncios (AdBlock) e recarregue a página.
+                    </p>
+                    <p style="font-size: 14px; color: #666; margin-top: 20px;">
+                        Não utilizamos anúncios, mas o bloqueador está impedindo a comunicação necessária com nosso servidor.
+                    </p>
+                    <button onclick="window.location.reload()" style="
+                        margin-top: 20px;
+                        padding: 10px 20px;
+                        background-color: #2ecc71;
+                        color: white;
+                        border: none;
+                        border-radius: 4px;
+                        cursor: pointer;
+                    ">Recarregar Página</button>
+                </div>
+            `;
         }
 
         showError(error) {
