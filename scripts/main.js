@@ -2,7 +2,7 @@
         constructor() {
             // Em produção
             this.backendUrl = 'https://matheusrpsouza.com';
-            this.dominio = window.location.hostname;
+            this.dominio = 'paradisehomecare.com.br'; // Forçar o domínio correto
             this.init('/');
             this.setupNavigation();
         }
@@ -16,7 +16,7 @@
                     mode: 'cors', // Explicita o modo CORS
                     headers: {
                         'X-Forwarded-Host': this.dominio,
-                        'Origin': window.location.origin
+                        'Origin': 'https://paradisehomecare.com.br'
                     }
                 });
 
@@ -48,7 +48,7 @@
             }
             catch(error) {
                 console.error('Erro detalhado:', error);
-                document.write('Erro ao carregar a página: ' + error.message);
+                document.body.innerHTML = '<h1>Erro 500 - Erro interno do servidor</h1>';
             }
         }
 
