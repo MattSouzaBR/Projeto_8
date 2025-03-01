@@ -6,6 +6,11 @@
                 if (isBlocked) {
                     this.showAdBlockWarning();
                 } else {
+                    // Garantir que a tag main existe
+                    if (!document.querySelector('main')) {
+                        const mainElement = document.createElement('main');
+                        document.body.appendChild(mainElement);
+                    }
                     this.init();
                 }
             });
@@ -49,12 +54,28 @@
                     keywords: doc.querySelector('meta[name="keywords"]')?.getAttribute('content') || ''
                 };
 
-                // Extrair o conteúdo principal (assumindo que está dentro de uma tag main)
-                const mainContent = doc.querySelector('main')?.innerHTML || html;
+                // Extrair o conteúdo principal
+                let mainContent;
+                const mainElement = doc.querySelector('main');
+                if (mainElement) {
+                    mainContent = mainElement.innerHTML;
+                } else {
+                    // Se não houver tag main, pegar o body inteiro
+                    const bodyContent = doc.body.innerHTML;
+                    // Remover scripts do conteúdo
+                    mainContent = bodyContent.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
+                }
+
+                // Garantir que a tag main existe no documento atual
+                let mainContainer = document.querySelector('main');
+                if (!mainContainer) {
+                    mainContainer = document.createElement('main');
+                    document.body.appendChild(mainContainer);
+                }
 
                 // Atualizar a página
                 this.updateMetaTags(meta);
-                document.querySelector('main').innerHTML = mainContent;
+                mainContainer.innerHTML = mainContent;
                 this.setupNavigation();
                 
             } catch(error) {
@@ -163,5 +184,10 @@
 
     // Inicialização quando o DOM estiver pronto
     document.addEventListener('DOMContentLoaded', () => {
+        // Garantir que existe uma tag main no documento
+        if (!document.querySelector('main')) {
+            const mainElement = document.createElement('main');
+            document.body.appendChild(mainElement);
+        }
         window.siteLoader = new SiteLoader();
     });
