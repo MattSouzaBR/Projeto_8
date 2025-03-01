@@ -21,15 +21,29 @@
                     credentials: 'include',
                     headers: {
                         'X-Forwarded-Host': this.dominio,
-                        'Host': this.dominio
+                        'Host': this.dominio,
+                        'Origin': `https://${this.dominio}`,
+                        'Referer': `https://${this.dominio}${path}`,
+                        'Accept': 'application/json, text/html, */*',
+                        'Accept-Language': 'pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7'
                     }
                 });
 
                 if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error('Resposta do servidor:', errorText);
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
 
-                const data = await response.json();
+                let data;
+                const contentType = response.headers.get('content-type');
+                if (contentType && contentType.includes('application/json')) {
+                    data = await response.json();
+                } else {
+                    const text = await response.text();
+                    console.error('Resposta não-JSON recebida:', text);
+                    throw new Error('Resposta não-JSON recebida do servidor');
+                }
                 
                 if (data.redirect) {
                     window.location.href = data.redirect;
@@ -40,11 +54,14 @@
                     this.updateMetaTags(data.meta);
                     document.querySelector('main').innerHTML = data.conteudo;
                     this.setupNavigation();
+                } else {
+                    console.error('Dados inválidos recebidos:', data);
+                    throw new Error('Formato de dados inválido');
                 }
                 
             } catch(error) {
                 console.error('Erro detalhado:', error);
-                console.error('Stack:', error);
+                console.error('Stack:', error.stack);
                 this.showError(error);
             }
         }
