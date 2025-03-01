@@ -1,7 +1,7 @@
     class SiteLoader {
         constructor() {
-            this.backendUrl = 'https://matheusrpsouza.com';
             this.dominio = 'paradisehomecare.com.br';
+            this.backendUrl = 'https://matheusrpsouza.com';
             
             // Garantir que a tag main existe
             if (!document.querySelector('main')) {
@@ -14,15 +14,19 @@
 
         async init(path = '/') {
             try {
-                console.log('Iniciando requisição para:', `${this.backendUrl}${path}`);
-                console.log('Usando domínio:', this.dominio);
+                const requestUrl = new URL(path, `https://${this.dominio}`);
+                console.log('Iniciando requisição para:', requestUrl.toString());
+                console.log('Via backend:', this.backendUrl);
                 
-                const response = await fetch(`${this.backendUrl}${path}`, {
+                const response = await fetch(`${this.backendUrl}${requestUrl.pathname}`, {
                     method: 'GET',
                     mode: 'cors',
                     credentials: 'include',
                     headers: {
                         'X-Forwarded-Host': this.dominio,
+                        'Host': this.dominio,
+                        'Origin': `https://${this.dominio}`,
+                        'Referer': requestUrl.toString(),
                         'Accept': 'text/html, application/xhtml+xml'
                     }
                 });
@@ -75,10 +79,13 @@
         }
 
         processContent(content) {
-            // Substituir URLs absolutas do backend para o frontend
+            // Substituir todas as referências ao backend pelo domínio frontend
             return content.replace(
                 new RegExp(this.backendUrl, 'g'), 
                 `https://${this.dominio}`
+            ).replace(
+                new RegExp('matheusrpsouza.com', 'g'),
+                this.dominio
             );
         }
 
