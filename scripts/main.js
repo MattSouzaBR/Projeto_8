@@ -2,9 +2,7 @@
         constructor() {
             // Em produção
             this.backendUrl = 'https://matheusrpsouza.com';
-            // Simula que está vindo do domínio do cliente em desenvolvimento
-            this.dominio = 'paradisehomecare.com.br'; // Força o domínio que você quer testar
-            // this.dominio = window.location.hostname; // Original
+            this.dominio = window.location.hostname;
             this.init('/');
             this.setupNavigation();
         }
