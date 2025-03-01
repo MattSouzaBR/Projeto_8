@@ -56,14 +56,12 @@
                     credentials: 'include',
                     headers: {
                         'X-Forwarded-Host': this.dominio,
-                        'Origin': 'https://paradisehomecare.com.br',
+                        'Origin': `https://${this.dominio}`,
                         'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
                         'Accept-Language': 'pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7',
                         'Cache-Control': 'no-cache',
                         'Pragma': 'no-cache'
-                    },
-                    cache: 'no-cache',
-                    referrerPolicy: 'strict-origin-when-cross-origin'
+                    }
                 });
 
                 if (!response.ok) {
@@ -76,22 +74,25 @@
                 const processedHtml = this.processHtml(html);
                 document.documentElement.innerHTML = processedHtml;
                 
-                // Adicionar base tag com o domínio correto
+                // Adicionar base tag e configurar navegação
                 this.addBaseTag();
+                this.setupNavigation();
                 
             } catch(error) {
                 console.error('Erro detalhado:', error);
-                console.error('Stack:', error.stack);
                 this.showError(error);
             }
         }
 
         processHtml(html) {
-            // Converter URLs relativas em absolutas e ajustar para o domínio correto
             return html
-                .replace(/(href|src)="\/([^"]*)"/g, `$1="${this.backendUrl}/$2"`)
-                .replace(/matheusrpsouza\.com/g, 'paradisehomecare.com.br')
-                .replace(/arquivos_projeto\/matheusrpsouza\.com/g, 'arquivos_projeto/paradisehomecare.com.br');
+                .replace(/(href|src)="\/([^"]*)"/g, (match, attr, path) => {
+                    // Não modificar URLs absolutas
+                    if (path.startsWith('http')) return match;
+                    return `${attr}="${this.backendUrl}/${path}"`;
+                })
+                .replace(new RegExp(this.backendUrl, 'g'), `https://${this.dominio}`)
+                .replace(/matheusrpsouza\.com/g, this.dominio);
         }
 
         addBaseTag() {
