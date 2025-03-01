@@ -59,6 +59,7 @@
                         'Origin': `https://${this.dominio}`,
                         'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
                         'Accept-Language': 'pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7',
+                        'X-Requested-With': 'XMLHttpRequest',
                         'Cache-Control': 'no-cache',
                         'Pragma': 'no-cache'
                     }
@@ -68,15 +69,20 @@
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
 
-                const html = await response.text();
+                const data = await response.json();
                 
-                // Processar o HTML antes de inserir
-                const processedHtml = this.processHtml(html);
-                document.documentElement.innerHTML = processedHtml;
-                
-                // Adicionar base tag e configurar navegação
-                this.addBaseTag();
-                this.setupNavigation();
+                if (data.redirect) {
+                    window.location.href = data.redirect;
+                    return;
+                }
+
+                if (data.conteudo && data.meta) {
+                    this.updateMetaTags(data.meta);
+                    
+                    document.querySelector('main').innerHTML = data.conteudo;
+                    
+                    this.setupNavigation();
+                }
                 
             } catch(error) {
                 console.error('Erro detalhado:', error);
@@ -84,38 +90,41 @@
             }
         }
 
-        processHtml(html) {
-            return html
-                .replace(/(href|src)="\/([^"]*)"/g, (match, attr, path) => {
-                    // Não modificar URLs absolutas
-                    if (path.startsWith('http')) return match;
-                    return `${attr}="${this.backendUrl}/${path}"`;
-                })
-                .replace(new RegExp(this.backendUrl, 'g'), `https://${this.dominio}`)
-                .replace(/matheusrpsouza\.com/g, this.dominio);
-        }
-
-        addBaseTag() {
-            const baseTag = document.createElement('base');
-            baseTag.href = this.backendUrl + '/';
-            document.head.insertBefore(baseTag, document.head.firstChild);
+        updateMetaTags(meta) {
+            document.title = meta.title;
+            
+            let descriptionMeta = document.querySelector('meta[name="description"]');
+            if (!descriptionMeta) {
+                descriptionMeta = document.createElement('meta');
+                descriptionMeta.setAttribute('name', 'description');
+                document.head.appendChild(descriptionMeta);
+            }
+            descriptionMeta.setAttribute('content', meta.description);
+            
+            let keywordsMeta = document.querySelector('meta[name="keywords"]');
+            if (!keywordsMeta) {
+                keywordsMeta = document.createElement('meta');
+                keywordsMeta.setAttribute('name', 'keywords');
+                document.head.appendChild(keywordsMeta);
+            }
+            keywordsMeta.setAttribute('content', meta.keywords);
         }
 
         setupNavigation() {
             document.querySelectorAll('a').forEach(link => {
-                link.addEventListener('click', (e) => {
-                    const href = link.getAttribute('href');
-                    if (href && !href.startsWith('http')) {
+                const href = link.getAttribute('href');
+                if (href && !href.startsWith('http') && !href.startsWith('mailto:') && !href.startsWith('tel:')) {
+                    link.addEventListener('click', (e) => {
                         e.preventDefault();
-                        const cleanHref = href.replace('/index.html', '');
-                        window.history.pushState({}, '', cleanHref);
-                        this.init(cleanHref);
-                    }
-                }, { once: true });
+                        const path = href.replace('/index.html', '');
+                        window.history.pushState({}, '', path);
+                        this.init(path);
+                    }, { once: true });
+                }
             });
 
             window.onpopstate = () => {
-                this.init(window.location.pathname || '/');
+                this.init(window.location.pathname);
             };
         }
 
